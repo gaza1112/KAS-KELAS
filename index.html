@@ -112,6 +112,9 @@
 
             <footer class="mt-6 text-center space-y-4">
                  <div class="flex justify-center gap-4 flex-wrap">
+                    <button id="tambah-donasi-button" class="bg-teal-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-teal-600 transition-colors">
+                        Tambah Donasi
+                    </button>
                     <button id="tambah-pengeluaran-button" class="bg-yellow-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-yellow-600 transition-colors">
                         Tambah Pengeluaran
                     </button>
@@ -161,13 +164,33 @@
         </div>
     </div>
 
+    <div id="donasi-modal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-bold text-center">Catat Donasi Baru</h3>
+            <form id="donasi-form">
+                <div class="mt-4">
+                    <label for="donasi-jumlah" class="block text-sm font-medium text-gray-300 mb-1">Jumlah (Rp)</label>
+                    <input type="number" id="donasi-jumlah" placeholder="Contoh: 50000" class="w-full px-4 py-2 border bg-gray-700 border-gray-600 text-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="batal-donasi" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="total-kas-modal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center p-4 hidden">
         <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-md text-center">
             <h3 class="text-lg font-bold text-blue-400">Rangkuman Kas Keseluruhan</h3>
             <div class="text-left mt-4 space-y-2">
                 <div class="flex justify-between items-center">
-                    <span class="text-gray-400">Total Pemasukan:</span>
+                    <span class="text-gray-400">Total Pemasukan Kas:</span>
                     <span id="display-pemasukan" class="font-semibold text-green-400 text-lg">Rp 0</span>
+                </div>
+                 <div class="flex justify-between items-center">
+                    <span class="text-gray-400">Total Pemasukan Donasi:</span>
+                    <span id="display-donasi" class="font-semibold text-teal-400 text-lg">Rp 0</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-400">Total Pengeluaran:</span>
@@ -178,10 +201,14 @@
             <p class="text-gray-300 text-xl">Saldo Akhir:</p>
             <p class="text-5xl font-bold text-blue-400 my-2" id="display-saldo-akhir">Rp 0</p>
             
-            <div class="mt-6 text-left">
-                <h4 class="font-semibold mb-2">Rincian Pengeluaran:</h4>
-                <div id="rincian-pengeluaran-list" class="max-h-40 overflow-y-auto space-y-2 pr-2">
-                    <!-- Rincian pengeluaran akan diisi oleh JavaScript -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 text-left">
+                <div>
+                    <h4 class="font-semibold mb-2">Rincian Donasi:</h4>
+                    <div id="rincian-donasi-list" class="max-h-32 overflow-y-auto space-y-2 pr-2"></div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">Rincian Pengeluaran:</h4>
+                    <div id="rincian-pengeluaran-list" class="max-h-32 overflow-y-auto space-y-2 pr-2"></div>
                 </div>
             </div>
 
@@ -214,36 +241,47 @@
             const KAS_AMOUNT = 2000;
             const STORAGE_KEY = 'kasKelasXLData';
 
+            // DOM Elements
             const studentListContainer = document.getElementById('student-list');
             const totalKasEl = document.getElementById('total-kas');
             const paidSummaryEl = document.getElementById('paid-summary');
             const btnSelasa = document.getElementById('btn-selasa');
             const btnJumat = document.getElementById('btn-jumat');
+            const monthSelect = document.getElementById('month-select');
+            const weekSelect = document.getElementById('week-select');
+
+            // Buttons
             const resetButton = document.getElementById('reset-button');
             const downloadButton = document.getElementById('download-button');
             const totalKasButton = document.getElementById('total-kas-button');
             const tambahPengeluaranButton = document.getElementById('tambah-pengeluaran-button');
-            
+            const tambahDonasiButton = document.getElementById('tambah-donasi-button');
+
+            // Modals
             const resetModal = document.getElementById('reset-modal');
             const pengeluaranModal = document.getElementById('pengeluaran-modal');
+            const donasiModal = document.getElementById('donasi-modal');
             const totalKasModal = document.getElementById('total-kas-modal');
 
+            // Forms & Modal Controls
             const pengeluaranForm = document.getElementById('pengeluaran-form');
+            const donasiForm = document.getElementById('donasi-form');
             const cancelResetButton = document.getElementById('cancel-reset');
             const confirmResetButton = document.getElementById('confirm-reset');
             const batalPengeluaranButton = document.getElementById('batal-pengeluaran');
+            const batalDonasiButton = document.getElementById('batal-donasi');
             const closeTotalKasModal = document.getElementById('close-total-kas-modal');
-            
+
+            // Display elements in Total Modal
             const displayPemasukan = document.getElementById('display-pemasukan');
+            const displayDonasi = document.getElementById('display-donasi');
             const displayPengeluaran = document.getElementById('display-pengeluaran');
             const displaySaldoAkhir = document.getElementById('display-saldo-akhir');
+            const rincianDonasiList = document.getElementById('rincian-donasi-list');
             const rincianPengeluaranList = document.getElementById('rincian-pengeluaran-list');
             
-            const monthSelect = document.getElementById('month-select');
-            const weekSelect = document.getElementById('week-select');
-
             let currentDay = 'selasa';
-            let allData = { kasData: {}, expenses: [] };
+            let allData = { kasData: {}, expenses: [], donations: [] };
 
             // --- Login Logic ---
             loginForm.addEventListener('submit', (e) => {
@@ -261,9 +299,10 @@
             // --- Data Handling Functions ---
             function loadAllData() {
                 const dataString = localStorage.getItem(STORAGE_KEY);
-                const loadedData = dataString ? JSON.parse(dataString) : { kasData: {}, expenses: [] };
+                const loadedData = dataString ? JSON.parse(dataString) : { kasData: {}, expenses: [], donations: [] };
                 if (!loadedData.kasData) loadedData.kasData = {};
                 if (!loadedData.expenses) loadedData.expenses = [];
+                if (!loadedData.donations) loadedData.donations = [];
                 return loadedData;
             }
 
@@ -367,19 +406,26 @@
                 const keterangan = document.getElementById('pengeluaran-keterangan').value;
                 const jumlah = parseInt(document.getElementById('pengeluaran-jumlah').value);
                 if (keterangan && jumlah > 0) {
-                    allData.expenses.push({
-                        keterangan,
-                        jumlah,
-                        tanggal: new Date().toISOString() // Unique ID
-                    });
+                    allData.expenses.push({ keterangan, jumlah, tanggal: new Date().toISOString() });
                     saveData();
                     pengeluaranForm.reset();
                     pengeluaranModal.classList.add('hidden');
                 }
             }
             
-            function deleteExpense(tanggal) {
-                allData.expenses = allData.expenses.filter(expense => expense.tanggal !== tanggal);
+            function handleDonationSubmit(e) {
+                e.preventDefault();
+                const jumlah = parseInt(document.getElementById('donasi-jumlah').value);
+                if (jumlah > 0) {
+                    allData.donations.push({ keterangan: "Donasi", jumlah, tanggal: new Date().toISOString() });
+                    saveData();
+                    donasiForm.reset();
+                    donasiModal.classList.add('hidden');
+                }
+            }
+            
+            function deleteTransaction(type, tanggal) {
+                allData[type] = allData[type].filter(item => item.tanggal !== tanggal);
                 saveData();
                 calculateAndShowTotalKas(); // Refresh the modal view
             }
@@ -395,46 +441,57 @@
                     }
                 }
 
-                let totalPengeluaran = 0;
-                rincianPengeluaranList.innerHTML = ''; // Clear previous list
+                let totalDonasi = 0;
+                rincianDonasiList.innerHTML = '';
+                if (allData.donations.length === 0) {
+                    rincianDonasiList.innerHTML = '<p class="text-gray-500">Belum ada donasi.</p>';
+                } else {
+                    allData.donations.forEach(donasi => {
+                        totalDonasi += donasi.jumlah;
+                        createTransactionItem(rincianDonasiList, donasi, 'donations');
+                    });
+                }
 
+                let totalPengeluaran = 0;
+                rincianPengeluaranList.innerHTML = '';
                 if (allData.expenses.length === 0) {
                     rincianPengeluaranList.innerHTML = '<p class="text-gray-500">Belum ada pengeluaran.</p>';
                 } else {
                     allData.expenses.forEach(expense => {
                         totalPengeluaran += expense.jumlah;
-                        
-                        const item = document.createElement('div');
-                        item.className = 'flex justify-between items-center bg-gray-700 p-2 rounded';
-                        
-                        const details = document.createElement('div');
-                        details.className = 'text-left';
-                        details.innerHTML = `<span class="font-medium">${expense.keterangan}</span><br><span class="text-xs text-gray-400">Rp ${expense.jumlah.toLocaleString('id-ID')}</span>`;
-                        
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'text-red-400 hover:text-red-300 p-1';
-                        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
-                        deleteBtn.onclick = () => deleteExpense(expense.tanggal);
-
-                        item.appendChild(details);
-                        item.appendChild(deleteBtn);
-                        rincianPengeluaranList.appendChild(item);
+                        createTransactionItem(rincianPengeluaranList, expense, 'expenses');
                     });
                 }
 
-                const saldoAkhir = totalPemasukan - totalPengeluaran;
+                const saldoAkhir = (totalPemasukan + totalDonasi) - totalPengeluaran;
 
                 displayPemasukan.textContent = `Rp ${totalPemasukan.toLocaleString('id-ID')}`;
+                displayDonasi.textContent = `Rp ${totalDonasi.toLocaleString('id-ID')}`;
                 displayPengeluaran.textContent = `Rp ${totalPengeluaran.toLocaleString('id-ID')}`;
                 displaySaldoAkhir.textContent = `Rp ${saldoAkhir.toLocaleString('id-ID')}`;
                 totalKasModal.classList.remove('hidden');
             }
 
+            function createTransactionItem(listElement, itemData, type) {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center bg-gray-700 p-2 rounded';
+                
+                const details = document.createElement('div');
+                details.className = 'text-left';
+                details.innerHTML = `<span class="font-medium">${itemData.keterangan}</span><br><span class="text-xs text-gray-400">Rp ${itemData.jumlah.toLocaleString('id-ID')}</span>`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'text-red-400 hover:text-red-300 p-1';
+                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
+                deleteBtn.onclick = () => deleteTransaction(type, itemData.tanggal);
+
+                item.appendChild(details);
+                item.appendChild(deleteBtn);
+                listElement.appendChild(item);
+            }
+
             function downloadReport() {
-                // Now downloads a full report, not just for the current week
-                let reportContent = `Laporan Kas Kelas X-L Keseluruhan\n`;
-                reportContent += `========================================\n`;
-                reportContent += `Laporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n\n`;
+                let reportContent = `Laporan Kas Kelas X-L Keseluruhan\n========================================\nLaporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n\n`;
 
                 let totalPemasukan = 0;
                 for (const periodKey in allData.kasData) {
@@ -446,20 +503,34 @@
                     }
                 }
                 
+                let totalDonasi = 0;
+                allData.donations.forEach(d => totalDonasi += d.jumlah);
                 let totalPengeluaran = 0;
-                allData.expenses.forEach(expense => totalPengeluaran += expense.jumlah);
-                const saldoAkhir = totalPemasukan - totalPengeluaran;
+                allData.expenses.forEach(e => totalPengeluaran += e.jumlah);
+                const saldoAkhir = (totalPemasukan + totalDonasi) - totalPengeluaran;
 
                 reportContent += `--- RANGKUMAN KEUANGAN ---\n`;
-                reportContent += `Total Pemasukan  : Rp ${totalPemasukan.toLocaleString('id-ID')}\n`;
-                reportContent += `Total Pengeluaran: Rp ${totalPengeluaran.toLocaleString('id-ID')}\n`;
-                reportContent += `Saldo Akhir      : Rp ${saldoAkhir.toLocaleString('id-ID')}\n\n`;
+                reportContent += `Total Pemasukan Kas  : Rp ${totalPemasukan.toLocaleString('id-ID')}\n`;
+                reportContent += `Total Pemasukan Donasi: Rp ${totalDonasi.toLocaleString('id-ID')}\n`;
+                reportContent += `Total Pengeluaran    : Rp ${totalPengeluaran.toLocaleString('id-ID')}\n`;
+                reportContent += `Saldo Akhir          : Rp ${saldoAkhir.toLocaleString('id-ID')}\n\n`;
+                
+                reportContent += `--- RINCIAN DONASI ---\n`;
+                if (allData.donations.length > 0) {
+                    allData.donations.forEach(d => {
+                        const tgl = new Date(d.tanggal).toLocaleDateString('id-ID');
+                        reportContent += `- ${tgl}: ${d.keterangan.padEnd(30, ' ')} (Rp ${d.jumlah.toLocaleString('id-ID')})\n`;
+                    });
+                } else {
+                    reportContent += `Tidak ada donasi.\n`;
+                }
+                reportContent += `\n`;
 
                 reportContent += `--- RINCIAN PENGELUARAN ---\n`;
                 if (allData.expenses.length > 0) {
-                    allData.expenses.forEach(expense => {
-                        const tgl = new Date(expense.tanggal).toLocaleDateString('id-ID');
-                        reportContent += `- ${tgl}: ${expense.keterangan.padEnd(30, ' ')} (Rp ${expense.jumlah.toLocaleString('id-ID')})\n`;
+                    allData.expenses.forEach(e => {
+                        const tgl = new Date(e.tanggal).toLocaleDateString('id-ID');
+                        reportContent += `- ${tgl}: ${e.keterangan.padEnd(30, ' ')} (Rp ${e.jumlah.toLocaleString('id-ID')})\n`;
                     });
                 } else {
                     reportContent += `Tidak ada pengeluaran.\n`;
@@ -483,6 +554,7 @@
                 monthSelect.value = '2025-7';
                 weekSelect.value = '3';
 
+                // Event Listeners
                 monthSelect.addEventListener('change', render);
                 weekSelect.addEventListener('change', render);
                 btnSelasa.addEventListener('click', () => { currentDay = 'selasa'; render(); });
@@ -492,6 +564,7 @@
                 downloadButton.addEventListener('click', downloadReport);
                 totalKasButton.addEventListener('click', calculateAndShowTotalKas);
                 tambahPengeluaranButton.addEventListener('click', () => pengeluaranModal.classList.remove('hidden'));
+                tambahDonasiButton.addEventListener('click', () => donasiModal.classList.remove('hidden'));
                 
                 cancelResetButton.addEventListener('click', () => resetModal.classList.add('hidden'));
                 confirmResetButton.addEventListener('click', () => {
@@ -501,6 +574,8 @@
                 
                 pengeluaranForm.addEventListener('submit', handleExpenseSubmit);
                 batalPengeluaranButton.addEventListener('click', () => pengeluaranModal.classList.add('hidden'));
+                donasiForm.addEventListener('submit', handleDonationSubmit);
+                batalDonasiButton.addEventListener('click', () => donasiModal.classList.add('hidden'));
                 closeTotalKasModal.addEventListener('click', () => totalKasModal.classList.add('hidden'));
 
                 render();

@@ -95,7 +95,6 @@
                         Reset Minggu Ini
                     </button>
                  </div>
-                <p class="text-xs text-gray-500 mt-4">User ID: <span id="user-id-display"></span></p>
             </footer>
         </div>
     </div>
@@ -111,317 +110,210 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const STUDENT_LIST = [
+                "Achmad Ilham", "Alvia Eren Istiqomah", "Ananda Ridho Aditama", "Amelia Dewi Maharani",
+                "Angelita Aura Aprilia", "Anisa Nurul Aini", "Arifa Intan Nurlatif", "Aurellia Tungga Dewi",
+                "Azzahra Putri Amira", "Cindy Intan Hadi Saputri", "Dhea Agusfina Al Warois",
+                "Dhimas Satrio Kurniawan", "Farih Naura Asfiya", "Gaza Tanziilal Furqon",
+                "Gista Nazuilla Armeli", "Intan Putri Agustina", "Irsya Nur Nazha", "Janice Vania",
+                "Kanaya Anyhania Ramadhani", "Keyza Putri Ramadhani", "Laura Imalia Putri",
+                "Lucky Leyva Lee Young Chu Jun", "Mochamad Akbar Saifudin Zuhri", "Muhamad Farhan Al Kafi",
+                "Muhammad Nikko Setya Pratama", "Mutiara Nur Laili", "Nabilla Nois Raya Putri Setiawan",
+                "Nandita Aulia", "Natasya Dewi", "Nia Avrillia", "Nicky Leyva Lee Young Chu Jun",
+                "Nur Amira Triana Ikhsanty", "Risza Aulia Ainul Fitri", "Robana Qusnul Joelia",
+                "Saecar Labib Kanhaya Siswanto", "Syevi Citrahrotunisa"
+            ];
+            const KAS_AMOUNT = 2000;
+            const STORAGE_KEY = 'kasKelasXLData';
 
-        // Blok ini menangani konfigurasi Firebase.
-        // Di lingkungan pratinjau, ini akan berjalan otomatis.
-        // Jika di-deploy di tempat lain (seperti Vercel), ini akan menampilkan pesan error yang jelas.
-        let firebaseConfig;
-        if (typeof __firebase_config !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-        } else {
-            document.body.innerHTML = `
-                <div class="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-                    <div class="bg-red-800 border border-red-600 text-white px-4 py-3 rounded-lg relative max-w-lg" role="alert">
-                        <strong class="font-bold text-lg block">Error Konfigurasi!</strong>
-                        <span class="block mt-2">Konfigurasi Firebase tidak ditemukan. Untuk menjalankan website ini di Vercel atau hosting lain, Anda harus:</span>
-                        <ol class="list-decimal list-inside mt-2 space-y-1">
-                            <li>Membuat proyek sendiri di <a href="https://firebase.google.com/" target="_blank" class="underline">Firebase</a>.</li>
-                            <li>Menyalin objek 'firebaseConfig' dari proyek Anda.</li>
-                            <li>Mengganti blok 'firebaseConfig' di dalam kode dengan objek yang Anda salin.</li>
-                        </ol>
-                    </div>
-                </div>`;
-            throw new Error("Firebase config not found. Please follow the setup guide to deploy this application.");
-        }
-        
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'class-cash-xl';
-        
-        const STUDENT_LIST = [
-            "Achmad Ilham", "Alvia Eren Istiqomah", "Ananda Ridho Aditama", "Amelia Dewi Maharani",
-            "Angelita Aura Aprilia", "Anisa Nurul Aini", "Arifa Intan Nurlatif", "Aurellia Tungga Dewi",
-            "Azzahra Putri Amira", "Cindy Intan Hadi Saputri", "Dhea Agusfina Al Warois",
-            "Dhimas Satrio Kurniawan", "Farih Naura Asfiya", "Gaza Tanziilal Furqon",
-            "Gista Nazuilla Armeli", "Intan Putri Agustina", "Irsya Nur Nazha", "Janice Vania",
-            "Kanaya Anyhania Ramadhani", "Keyza Putri Ramadhani", "Laura Imalia Putri",
-            "Lucky Leyva Lee Young Chu Jun", "Mochamad Akbar Saifudin Zuhri", "Muhamad Farhan Al Kafi",
-            "Muhammad Nikko Setya Pratama", "Mutiara Nur Laili", "Nabilla Nois Raya Putri Setiawan",
-            "Nandita Aulia", "Natasya Dewi", "Nia Avrillia", "Nicky Leyva Lee Young Chu Jun",
-            "Nur Amira Triana Ikhsanty", "Risza Aulia Ainul Fitri", "Robana Qusnul Joelia",
-            "Saecar Labib Kanhaya Siswanto", "Syevi Citrahrotunisa"
-        ];
-        const KAS_AMOUNT = 2000;
+            const studentListContainer = document.getElementById('student-list');
+            const totalKasEl = document.getElementById('total-kas');
+            const paidSummaryEl = document.getElementById('paid-summary');
+            const btnSelasa = document.getElementById('btn-selasa');
+            const btnJumat = document.getElementById('btn-jumat');
+            const resetButton = document.getElementById('reset-button');
+            const downloadButton = document.getElementById('download-button');
+            const resetModal = document.getElementById('reset-modal');
+            const cancelResetButton = document.getElementById('cancel-reset');
+            const confirmResetButton = document.getElementById('confirm-reset');
+            const monthSelect = document.getElementById('month-select');
+            const weekSelect = document.getElementById('week-select');
 
-        const appView = document.getElementById('app-view');
-        const studentListContainer = document.getElementById('student-list');
-        const totalKasEl = document.getElementById('total-kas');
-        const paidSummaryEl = document.getElementById('paid-summary');
-        const btnSelasa = document.getElementById('btn-selasa');
-        const btnJumat = document.getElementById('btn-jumat');
-        const resetButton = document.getElementById('reset-button');
-        const downloadButton = document.getElementById('download-button');
-        const resetModal = document.getElementById('reset-modal');
-        const cancelResetButton = document.getElementById('cancel-reset');
-        const confirmResetButton = document.getElementById('confirm-reset');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const monthSelect = document.getElementById('month-select');
-        const weekSelect = document.getElementById('week-select');
+            let currentDay = 'selasa';
+            let allData = {};
 
-        let db, auth, userId, collectionRef;
-        let studentData = {};
-        let currentDay = 'selasa';
-        let currentMonth, currentYear, currentWeek;
-        let isAuthReady = false;
-        let unsubscribe;
-
-        function populateMonthSelector() {
-            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            const startYear = 2025;
-            const endYear = 2026;
-
-            monthSelect.innerHTML = '';
-            
-            for (let i = 6; i < 12; i++) {
-                const option = document.createElement('option');
-                option.value = `${startYear}-${i + 1}`;
-                option.textContent = `${months[i]} ${startYear}`;
-                monthSelect.appendChild(option);
+            // --- Data Handling Functions ---
+            function loadAllData() {
+                const dataString = localStorage.getItem(STORAGE_KEY);
+                return dataString ? JSON.parse(dataString) : {};
             }
 
-            for (let i = 0; i <= 6; i++) {
-                 const option = document.createElement('option');
-                option.value = `${endYear}-${i + 1}`;
-                option.textContent = `${months[i]} ${endYear}`;
-                monthSelect.appendChild(option);
+            function saveDataForPeriod(periodKey, data) {
+                allData[periodKey] = data;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
             }
-        }
 
-        async function initializeFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = userId;
-                        isAuthReady = true;
-                        initializeAppLogic();
-                    } else {
-                        try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            console.error("Sign-in error:", error);
-                        }
-                    }
+            function getDataForCurrentPeriod() {
+                const periodKey = `${monthSelect.value}-${weekSelect.value}`;
+                if (!allData[periodKey]) {
+                    // Seed data if it doesn't exist for this period
+                    const initialData = {};
+                    STUDENT_LIST.forEach((name, index) => {
+                        initialData[`student_${index}`] = { name, selasa: false, jumat: false };
+                    });
+                    allData[periodKey] = initialData;
+                    saveDataForPeriod(periodKey, allData[periodKey]);
+                }
+                return allData[periodKey];
+            }
+
+            // --- UI Functions ---
+            function populateMonthSelector() {
+                const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                const startYear = 2025;
+                const endYear = 2026;
+                monthSelect.innerHTML = '';
+                for (let i = 6; i < 12; i++) {
+                    const option = document.createElement('option');
+                    option.value = `${startYear}-${i + 1}`;
+                    option.textContent = `${months[i]} ${startYear}`;
+                    monthSelect.appendChild(option);
+                }
+                for (let i = 0; i <= 6; i++) {
+                    const option = document.createElement('option');
+                    option.value = `${endYear}-${i + 1}`;
+                    option.textContent = `${months[i]} ${endYear}`;
+                    monthSelect.appendChild(option);
+                }
+            }
+
+            function render() {
+                const studentData = getDataForCurrentPeriod();
+                studentListContainer.innerHTML = '';
+                Object.keys(studentData).forEach((studentId, index) => {
+                    const data = studentData[studentId];
+                    const hasPaid = data[currentDay];
+                    const entry = document.createElement('div');
+                    entry.className = `student-entry flex items-center justify-between p-3 rounded-lg shadow-sm ${hasPaid ? 'bg-green-500/10 text-green-300' : 'bg-red-500/10 text-red-300'}`;
+                    entry.dataset.id = studentId;
+
+                    const studentName = document.createElement('span');
+                    studentName.className = 'font-medium';
+                    studentName.textContent = `${index + 1}. ${data.name}`;
+
+                    const status = document.createElement('span');
+                    status.className = `font-bold text-sm px-2 py-1 rounded-full ${hasPaid ? 'bg-green-500/20' : 'bg-red-500/20'}`;
+                    status.textContent = hasPaid ? 'LUNAS' : 'BELUM';
+                    
+                    entry.appendChild(studentName);
+                    entry.appendChild(status);
+                    entry.addEventListener('click', () => togglePayment(studentId));
+                    studentListContainer.appendChild(entry);
                 });
-            } catch (error) {
-                console.error("Firebase init failed:", error);
-            }
-        }
-
-        function initializeAppLogic() {
-            if (!isAuthReady || !db) return;
-            
-            populateMonthSelector();
-
-            monthSelect.value = '2025-7';
-            weekSelect.value = '3';
-
-            setupControls();
-            updateDataForSelectedPeriod();
-        }
-        
-        function updateDataForSelectedPeriod() {
-            if (unsubscribe) unsubscribe();
-            
-            const [year, month] = monthSelect.value.split('-');
-            currentYear = year;
-            currentMonth = month;
-            currentWeek = weekSelect.value;
-            
-            studentData = {};
-            const collectionPath = `/artifacts/${appId}/public/data/${currentYear}-${currentMonth}/week-${currentWeek}/students`;
-            collectionRef = collection(db, collectionPath);
-            
-            checkAndSeedData().then(listenForUpdates);
-        }
-
-        async function checkAndSeedData() {
-            const docRef = doc(collectionRef, 'student_0');
-            const docSnap = await getDoc(docRef);
-
-            if (!docSnap.exists()) {
-                console.log(`No data for ${currentYear}-${currentMonth} Week ${currentWeek}. Seeding...`);
-                const batch = writeBatch(db);
-                STUDENT_LIST.forEach((name, index) => {
-                    const studentId = `student_${index}`;
-                    const newStudentRef = doc(collectionRef, studentId);
-                    batch.set(newStudentRef, { id: studentId, name: name, selasa: false, jumat: false });
-                });
-                await batch.commit();
-            }
-        }
-        
-        function listenForUpdates() {
-            updateActiveDayButton();
-            unsubscribe = onSnapshot(collectionRef, (snapshot) => {
-                snapshot.docs.forEach(doc => {
-                    studentData[doc.id] = doc.data();
-                });
-                renderStudentList();
                 updateSummary();
-            }, error => console.error("Error listening to collection:", error));
-        }
-
-        function renderStudentList() {
-            studentListContainer.innerHTML = '';
-            STUDENT_LIST.forEach((name, index) => {
-                const studentId = `student_${index}`;
-                const data = studentData[studentId] || { selasa: false, jumat: false };
-                const hasPaid = data[currentDay];
-
-                const entry = document.createElement('div');
-                entry.className = `student-entry flex items-center justify-between p-3 rounded-lg shadow-sm ${hasPaid ? 'bg-green-500/10 text-green-300' : 'bg-red-500/10 text-red-300'}`;
-                entry.dataset.id = studentId;
-
-                const studentName = document.createElement('span');
-                studentName.className = 'font-medium';
-                studentName.textContent = `${index + 1}. ${name}`;
-
-                const status = document.createElement('span');
-                status.className = `font-bold text-sm px-2 py-1 rounded-full ${hasPaid ? 'bg-green-500/20' : 'bg-red-500/20'}`;
-                status.textContent = hasPaid ? 'LUNAS' : 'BELUM';
-                
-                entry.appendChild(studentName);
-                entry.appendChild(status);
-                entry.addEventListener('click', () => togglePayment(studentId));
-                studentListContainer.appendChild(entry);
-            });
-        }
-
-        function updateSummary() {
-            let paidCount = Object.values(studentData).filter(s => s[currentDay]).length;
-            const total = paidCount * KAS_AMOUNT;
-            totalKasEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
-            paidSummaryEl.textContent = `${paidCount} dari ${STUDENT_LIST.length} siswa telah membayar.`;
-        }
-
-        function updateActiveDayButton() {
-            btnSelasa.classList.toggle('active', currentDay === 'selasa');
-            btnJumat.classList.toggle('active', currentDay === 'jumat');
-        }
-
-        function setupControls() {
-            monthSelect.addEventListener('change', updateDataForSelectedPeriod);
-            weekSelect.addEventListener('change', updateDataForSelectedPeriod);
-
-            btnSelasa.addEventListener('click', () => {
-                currentDay = 'selasa';
                 updateActiveDayButton();
-                renderStudentList();
-                updateSummary();
-            });
-            btnJumat.addEventListener('click', () => {
-                currentDay = 'jumat';
-                updateActiveDayButton();
-                renderStudentList();
-                updateSummary();
-            });
-
-            resetButton.addEventListener('click', () => resetModal.classList.remove('hidden'));
-            downloadButton.addEventListener('click', downloadReport);
-            cancelResetButton.addEventListener('click', () => resetModal.classList.add('hidden'));
-            confirmResetButton.addEventListener('click', async () => {
-                await resetCurrentWeekPayments();
-                resetModal.classList.add('hidden');
-            });
-        }
-
-        async function togglePayment(studentId) {
-            if (!studentData[studentId]) return;
-            const currentStatus = studentData[studentId][currentDay];
-            const studentDocRef = doc(collectionRef, studentId);
-            try {
-                const batch = writeBatch(db);
-                batch.update(studentDocRef, { [currentDay]: !currentStatus });
-                await batch.commit();
-            } catch (error) {
-                console.error("Error updating payment status:", error);
             }
-        }
 
-        async function resetCurrentWeekPayments() {
-            const batch = writeBatch(db);
-            Object.keys(studentData).forEach(studentId => {
-                const studentDocRef = doc(collectionRef, studentId);
-                batch.update(studentDocRef, { selasa: false, jumat: false });
-            });
-            try {
-                await batch.commit();
-            } catch (error) {
-                console.error("Error during weekly reset:", error);
+            function updateSummary() {
+                const studentData = getDataForCurrentPeriod();
+                const paidCount = Object.values(studentData).filter(s => s[currentDay]).length;
+                const total = paidCount * KAS_AMOUNT;
+                totalKasEl.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+                paidSummaryEl.textContent = `${paidCount} dari ${STUDENT_LIST.length} siswa telah membayar.`;
             }
-        }
 
-        function downloadReport() {
-            const selectedMonthText = monthSelect.options[monthSelect.selectedIndex].text;
-            const selectedWeekText = weekSelect.options[weekSelect.selectedIndex].text;
-
-            let reportContent = `Laporan Kas Kelas X-L\n`;
-            reportContent += `========================================\n`;
-            reportContent += `Periode: ${selectedMonthText} - ${selectedWeekText}\n\n`;
-
-            let totalSelasa = 0;
-            let totalJumat = 0;
-
-            Object.values(studentData).forEach(student => {
-                if (student.selasa) totalSelasa += KAS_AMOUNT;
-                if (student.jumat) totalJumat += KAS_AMOUNT;
-            });
+            function updateActiveDayButton() {
+                btnSelasa.classList.toggle('active', currentDay === 'selasa');
+                btnJumat.classList.toggle('active', currentDay === 'jumat');
+            }
             
-            const grandTotal = totalSelasa + totalJumat;
-            reportContent += `Total Kas Terkumpul (Minggu Ini): Rp ${grandTotal.toLocaleString('id-ID')}\n`;
-            reportContent += ` - Selasa: Rp ${totalSelasa.toLocaleString('id-ID')}\n`;
-            reportContent += ` - Jumat: Rp ${totalJumat.toLocaleString('id-ID')}\n\n`;
+            // --- Event Handlers & Actions ---
+            function togglePayment(studentId) {
+                const periodKey = `${monthSelect.value}-${weekSelect.value}`;
+                const studentData = getDataForCurrentPeriod();
+                studentData[studentId][currentDay] = !studentData[studentId][currentDay];
+                saveDataForPeriod(periodKey, studentData);
+                render();
+            }
 
-            reportContent += `--- RINCIAN HARI SELASA ---\n`;
-            STUDENT_LIST.forEach((name, index) => {
-                const studentId = `student_${index}`;
-                const status = studentData[studentId]?.selasa ? 'LUNAS' : 'BELUM';
-                reportContent += `${(index + 1).toString().padStart(2, ' ')}. ${name.padEnd(35, ' ')}: ${status}\n`;
-            });
+            function resetCurrentWeekPayments() {
+                const periodKey = `${monthSelect.value}-${weekSelect.value}`;
+                const studentData = getDataForCurrentPeriod();
+                Object.keys(studentData).forEach(studentId => {
+                    studentData[studentId].selasa = false;
+                    studentData[studentId].jumat = false;
+                });
+                saveDataForPeriod(periodKey, studentData);
+                render();
+            }
 
-            reportContent += `\n--- RINCIAN HARI JUMAT ---\n`;
-            STUDENT_LIST.forEach((name, index) => {
-                const studentId = `student_${index}`;
-                const status = studentData[studentId]?.jumat ? 'LUNAS' : 'BELUM';
-                reportContent += `${(index + 1).toString().padStart(2, ' ')}. ${name.padEnd(35, ' ')}: ${status}\n`;
-            });
-            
-            reportContent += `\n\nLaporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n`;
+            function downloadReport() {
+                const studentData = getDataForCurrentPeriod();
+                const selectedMonthText = monthSelect.options[monthSelect.selectedIndex].text;
+                const selectedWeekText = weekSelect.options[weekSelect.selectedIndex].text;
+                let reportContent = `Laporan Kas Kelas X-L\n========================================\nPeriode: ${selectedMonthText} - ${selectedWeekText}\n\n`;
+                let totalSelasa = 0;
+                let totalJumat = 0;
+                Object.values(studentData).forEach(student => {
+                    if (student.selasa) totalSelasa += KAS_AMOUNT;
+                    if (student.jumat) totalJumat += KAS_AMOUNT;
+                });
+                const grandTotal = totalSelasa + totalJumat;
+                reportContent += `Total Kas Terkumpul (Minggu Ini): Rp ${grandTotal.toLocaleString('id-ID')}\n - Selasa: Rp ${totalSelasa.toLocaleString('id-ID')}\n - Jumat: Rp ${totalJumat.toLocaleString('id-ID')}\n\n`;
+                reportContent += `--- RINCIAN HARI SELASA ---\n`;
+                Object.values(studentData).forEach((data, index) => {
+                    const status = data.selasa ? 'LUNAS' : 'BELUM';
+                    reportContent += `${(index + 1).toString().padStart(2, ' ')}. ${data.name.padEnd(35, ' ')}: ${status}\n`;
+                });
+                reportContent += `\n--- RINCIAN HARI JUMAT ---\n`;
+                Object.values(studentData).forEach((data, index) => {
+                    const status = data.jumat ? 'LUNAS' : 'BELUM';
+                    reportContent += `${(index + 1).toString().padStart(2, ' ')}. ${data.name.padEnd(35, ' ')}: ${status}\n`;
+                });
+                reportContent += `\n\nLaporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n`;
+                const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `laporan-kas-X-L-${selectedMonthText.replace(/ /g, '-')}-${selectedWeekText.replace(/ /g, '-')}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
 
-            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `laporan-kas-X-L-${selectedMonthText.replace(/ /g, '-')}-${selectedWeekText.replace(/ /g, '-')}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+            // --- Initialization ---
+            function initializeApp() {
+                allData = loadAllData();
+                populateMonthSelector();
+                monthSelect.value = '2025-7';
+                weekSelect.value = '3';
 
-        // Initialize the app when the script loads
-        initializeFirebase();
+                monthSelect.addEventListener('change', render);
+                weekSelect.addEventListener('change', render);
+                btnSelasa.addEventListener('click', () => {
+                    currentDay = 'selasa';
+                    render();
+                });
+                btnJumat.addEventListener('click', () => {
+                    currentDay = 'jumat';
+                    render();
+                });
+                resetButton.addEventListener('click', () => resetModal.classList.remove('hidden'));
+                downloadButton.addEventListener('click', downloadReport);
+                cancelResetButton.addEventListener('click', () => resetModal.classList.add('hidden'));
+                confirmResetButton.addEventListener('click', () => {
+                    resetCurrentWeekPayments();
+                    resetModal.classList.add('hidden');
+                });
+
+                render();
+            }
+
+            initializeApp();
+        });
     </script>
 </body>
 </html>

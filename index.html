@@ -110,8 +110,14 @@
                 </div>
             </main>
 
-            <footer class="mt-6 text-center">
-                 <div class="flex justify-center gap-4">
+            <footer class="mt-6 text-center space-y-4">
+                 <div class="flex justify-center gap-4 flex-wrap">
+                    <button id="tambah-pengeluaran-button" class="bg-yellow-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-yellow-600 transition-colors">
+                        Tambah Pengeluaran
+                    </button>
+                    <button id="total-kas-button" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Total Keseluruhan
+                    </button>
                     <button id="download-button" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors">
                         Download Laporan
                     </button>
@@ -123,6 +129,7 @@
         </div>
     </div>
     
+    <!-- Modals -->
     <div id="reset-modal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center p-4 hidden">
         <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm">
             <h3 class="text-lg font-bold text-center">Konfirmasi Reset</h3>
@@ -130,6 +137,56 @@
             <div class="flex justify-end gap-3 mt-6">
                 <button id="cancel-reset" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500">Batal</button>
                 <button id="confirm-reset" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Ya, Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pengeluaran-modal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-bold text-center">Catat Pengeluaran Baru</h3>
+            <form id="pengeluaran-form">
+                <div class="mt-4">
+                    <label for="pengeluaran-keterangan" class="block text-sm font-medium text-gray-300 mb-1">Keterangan</label>
+                    <input type="text" id="pengeluaran-keterangan" placeholder="Contoh: Beli spidol papan tulis" class="w-full px-4 py-2 border bg-gray-700 border-gray-600 text-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mt-4">
+                    <label for="pengeluaran-jumlah" class="block text-sm font-medium text-gray-300 mb-1">Jumlah (Rp)</label>
+                    <input type="number" id="pengeluaran-jumlah" placeholder="Contoh: 15000" class="w-full px-4 py-2 border bg-gray-700 border-gray-600 text-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="batal-pengeluaran" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="total-kas-modal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-md text-center">
+            <h3 class="text-lg font-bold text-blue-400">Rangkuman Kas Keseluruhan</h3>
+            <div class="text-left mt-4 space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400">Total Pemasukan:</span>
+                    <span id="display-pemasukan" class="font-semibold text-green-400 text-lg">Rp 0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400">Total Pengeluaran:</span>
+                    <span id="display-pengeluaran" class="font-semibold text-red-400 text-lg">Rp 0</span>
+                </div>
+            </div>
+            <hr class="border-gray-600 my-3">
+            <p class="text-gray-300 text-xl">Saldo Akhir:</p>
+            <p class="text-5xl font-bold text-blue-400 my-2" id="display-saldo-akhir">Rp 0</p>
+            
+            <div class="mt-6 text-left">
+                <h4 class="font-semibold mb-2">Rincian Pengeluaran:</h4>
+                <div id="rincian-pengeluaran-list" class="max-h-40 overflow-y-auto space-y-2 pr-2">
+                    <!-- Rincian pengeluaran akan diisi oleh JavaScript -->
+                </div>
+            </div>
+
+            <div class="flex justify-center mt-6">
+                <button id="close-total-kas-modal" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Tutup</button>
             </div>
         </div>
     </div>
@@ -164,22 +221,34 @@
             const btnJumat = document.getElementById('btn-jumat');
             const resetButton = document.getElementById('reset-button');
             const downloadButton = document.getElementById('download-button');
+            const totalKasButton = document.getElementById('total-kas-button');
+            const tambahPengeluaranButton = document.getElementById('tambah-pengeluaran-button');
+            
             const resetModal = document.getElementById('reset-modal');
+            const pengeluaranModal = document.getElementById('pengeluaran-modal');
+            const totalKasModal = document.getElementById('total-kas-modal');
+
+            const pengeluaranForm = document.getElementById('pengeluaran-form');
             const cancelResetButton = document.getElementById('cancel-reset');
             const confirmResetButton = document.getElementById('confirm-reset');
+            const batalPengeluaranButton = document.getElementById('batal-pengeluaran');
+            const closeTotalKasModal = document.getElementById('close-total-kas-modal');
+            
+            const displayPemasukan = document.getElementById('display-pemasukan');
+            const displayPengeluaran = document.getElementById('display-pengeluaran');
+            const displaySaldoAkhir = document.getElementById('display-saldo-akhir');
+            const rincianPengeluaranList = document.getElementById('rincian-pengeluaran-list');
+            
             const monthSelect = document.getElementById('month-select');
             const weekSelect = document.getElementById('week-select');
 
             let currentDay = 'selasa';
-            let allData = {};
+            let allData = { kasData: {}, expenses: [] };
 
             // --- Login Logic ---
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-
-                if (username === 'gaza74' && password === 'gaza74') {
+                if (document.getElementById('username').value === 'gaza74' && document.getElementById('password').value === 'gaza74') {
                     loginError.textContent = '';
                     loginView.classList.add('hidden');
                     appView.classList.remove('hidden');
@@ -192,26 +261,27 @@
             // --- Data Handling Functions ---
             function loadAllData() {
                 const dataString = localStorage.getItem(STORAGE_KEY);
-                return dataString ? JSON.parse(dataString) : {};
+                const loadedData = dataString ? JSON.parse(dataString) : { kasData: {}, expenses: [] };
+                if (!loadedData.kasData) loadedData.kasData = {};
+                if (!loadedData.expenses) loadedData.expenses = [];
+                return loadedData;
             }
 
-            function saveDataForPeriod(periodKey, data) {
-                allData[periodKey] = data;
+            function saveData() {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
             }
 
             function getDataForCurrentPeriod() {
                 const periodKey = `${monthSelect.value}-${weekSelect.value}`;
-                if (!allData[periodKey]) {
-                    // Seed data if it doesn't exist for this period
+                if (!allData.kasData[periodKey]) {
                     const initialData = {};
                     STUDENT_LIST.forEach((name, index) => {
                         initialData[`student_${index}`] = { name, selasa: false, jumat: false };
                     });
-                    allData[periodKey] = initialData;
-                    saveDataForPeriod(periodKey, allData[periodKey]);
+                    allData.kasData[periodKey] = initialData;
+                    saveData();
                 }
-                return allData[periodKey];
+                return allData.kasData[periodKey];
             }
 
             // --- UI Functions ---
@@ -276,53 +346,130 @@
             
             // --- Event Handlers & Actions ---
             function togglePayment(studentId) {
-                const periodKey = `${monthSelect.value}-${weekSelect.value}`;
                 const studentData = getDataForCurrentPeriod();
                 studentData[studentId][currentDay] = !studentData[studentId][currentDay];
-                saveDataForPeriod(periodKey, studentData);
+                saveData();
                 render();
             }
 
             function resetCurrentWeekPayments() {
-                const periodKey = `${monthSelect.value}-${weekSelect.value}`;
                 const studentData = getDataForCurrentPeriod();
                 Object.keys(studentData).forEach(studentId => {
                     studentData[studentId].selasa = false;
                     studentData[studentId].jumat = false;
                 });
-                saveDataForPeriod(periodKey, studentData);
+                saveData();
                 render();
             }
 
+            function handleExpenseSubmit(e) {
+                e.preventDefault();
+                const keterangan = document.getElementById('pengeluaran-keterangan').value;
+                const jumlah = parseInt(document.getElementById('pengeluaran-jumlah').value);
+                if (keterangan && jumlah > 0) {
+                    allData.expenses.push({
+                        keterangan,
+                        jumlah,
+                        tanggal: new Date().toISOString() // Unique ID
+                    });
+                    saveData();
+                    pengeluaranForm.reset();
+                    pengeluaranModal.classList.add('hidden');
+                }
+            }
+            
+            function deleteExpense(tanggal) {
+                allData.expenses = allData.expenses.filter(expense => expense.tanggal !== tanggal);
+                saveData();
+                calculateAndShowTotalKas(); // Refresh the modal view
+            }
+
+            function calculateAndShowTotalKas() {
+                let totalPemasukan = 0;
+                for (const periodKey in allData.kasData) {
+                    const periodData = allData.kasData[periodKey];
+                    for (const studentId in periodData) {
+                        const student = periodData[studentId];
+                        if (student.selasa) totalPemasukan += KAS_AMOUNT;
+                        if (student.jumat) totalPemasukan += KAS_AMOUNT;
+                    }
+                }
+
+                let totalPengeluaran = 0;
+                rincianPengeluaranList.innerHTML = ''; // Clear previous list
+
+                if (allData.expenses.length === 0) {
+                    rincianPengeluaranList.innerHTML = '<p class="text-gray-500">Belum ada pengeluaran.</p>';
+                } else {
+                    allData.expenses.forEach(expense => {
+                        totalPengeluaran += expense.jumlah;
+                        
+                        const item = document.createElement('div');
+                        item.className = 'flex justify-between items-center bg-gray-700 p-2 rounded';
+                        
+                        const details = document.createElement('div');
+                        details.className = 'text-left';
+                        details.innerHTML = `<span class="font-medium">${expense.keterangan}</span><br><span class="text-xs text-gray-400">Rp ${expense.jumlah.toLocaleString('id-ID')}</span>`;
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'text-red-400 hover:text-red-300 p-1';
+                        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
+                        deleteBtn.onclick = () => deleteExpense(expense.tanggal);
+
+                        item.appendChild(details);
+                        item.appendChild(deleteBtn);
+                        rincianPengeluaranList.appendChild(item);
+                    });
+                }
+
+                const saldoAkhir = totalPemasukan - totalPengeluaran;
+
+                displayPemasukan.textContent = `Rp ${totalPemasukan.toLocaleString('id-ID')}`;
+                displayPengeluaran.textContent = `Rp ${totalPengeluaran.toLocaleString('id-ID')}`;
+                displaySaldoAkhir.textContent = `Rp ${saldoAkhir.toLocaleString('id-ID')}`;
+                totalKasModal.classList.remove('hidden');
+            }
+
             function downloadReport() {
-                const studentData = getDataForCurrentPeriod();
-                const selectedMonthText = monthSelect.options[monthSelect.selectedIndex].text;
-                const selectedWeekText = weekSelect.options[weekSelect.selectedIndex].text;
-                let reportContent = `Laporan Kas Kelas X-L\n========================================\nPeriode: ${selectedMonthText} - ${selectedWeekText}\n\n`;
-                let totalSelasa = 0;
-                let totalJumat = 0;
-                Object.values(studentData).forEach(student => {
-                    if (student.selasa) totalSelasa += KAS_AMOUNT;
-                    if (student.jumat) totalJumat += KAS_AMOUNT;
-                });
-                const grandTotal = totalSelasa + totalJumat;
-                reportContent += `Total Kas Terkumpul (Minggu Ini): Rp ${grandTotal.toLocaleString('id-ID')}\n - Selasa: Rp ${totalSelasa.toLocaleString('id-ID')}\n - Jumat: Rp ${totalJumat.toLocaleString('id-ID')}\n\n`;
-                reportContent += `--- RINCIAN HARI SELASA ---\n`;
-                Object.values(studentData).forEach((data, index) => {
-                    const status = data.selasa ? 'LUNAS' : 'BELUM';
-                    reportContent += `${(index + 1).toString().padStart(2, ' ')}. ${data.name.padEnd(35, ' ')}: ${status}\n`;
-                });
-                reportContent += `\n--- RINCIAN HARI JUMAT ---\n`;
-                Object.values(studentData).forEach((data, index) => {
-                    const status = data.jumat ? 'LUNAS' : 'BELUM';
-                    reportContent += `${(index + 1).toString().padStart(2, ' ')}. ${data.name.padEnd(35, ' ')}: ${status}\n`;
-                });
-                reportContent += `\n\nLaporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n`;
+                // Now downloads a full report, not just for the current week
+                let reportContent = `Laporan Kas Kelas X-L Keseluruhan\n`;
+                reportContent += `========================================\n`;
+                reportContent += `Laporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n\n`;
+
+                let totalPemasukan = 0;
+                for (const periodKey in allData.kasData) {
+                    const periodData = allData.kasData[periodKey];
+                    for (const studentId in periodData) {
+                        const student = periodData[studentId];
+                        if (student.selasa) totalPemasukan += KAS_AMOUNT;
+                        if (student.jumat) totalPemasukan += KAS_AMOUNT;
+                    }
+                }
+                
+                let totalPengeluaran = 0;
+                allData.expenses.forEach(expense => totalPengeluaran += expense.jumlah);
+                const saldoAkhir = totalPemasukan - totalPengeluaran;
+
+                reportContent += `--- RANGKUMAN KEUANGAN ---\n`;
+                reportContent += `Total Pemasukan  : Rp ${totalPemasukan.toLocaleString('id-ID')}\n`;
+                reportContent += `Total Pengeluaran: Rp ${totalPengeluaran.toLocaleString('id-ID')}\n`;
+                reportContent += `Saldo Akhir      : Rp ${saldoAkhir.toLocaleString('id-ID')}\n\n`;
+
+                reportContent += `--- RINCIAN PENGELUARAN ---\n`;
+                if (allData.expenses.length > 0) {
+                    allData.expenses.forEach(expense => {
+                        const tgl = new Date(expense.tanggal).toLocaleDateString('id-ID');
+                        reportContent += `- ${tgl}: ${expense.keterangan.padEnd(30, ' ')} (Rp ${expense.jumlah.toLocaleString('id-ID')})\n`;
+                    });
+                } else {
+                    reportContent += `Tidak ada pengeluaran.\n`;
+                }
+                
                 const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `laporan-kas-X-L-${selectedMonthText.replace(/ /g, '-')}-${selectedWeekText.replace(/ /g, '-')}.txt`;
+                a.download = `laporan-kas-keseluruhan-X-L.txt`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -338,25 +485,26 @@
 
                 monthSelect.addEventListener('change', render);
                 weekSelect.addEventListener('change', render);
-                btnSelasa.addEventListener('click', () => {
-                    currentDay = 'selasa';
-                    render();
-                });
-                btnJumat.addEventListener('click', () => {
-                    currentDay = 'jumat';
-                    render();
-                });
+                btnSelasa.addEventListener('click', () => { currentDay = 'selasa'; render(); });
+                btnJumat.addEventListener('click', () => { currentDay = 'jumat'; render(); });
+                
                 resetButton.addEventListener('click', () => resetModal.classList.remove('hidden'));
                 downloadButton.addEventListener('click', downloadReport);
+                totalKasButton.addEventListener('click', calculateAndShowTotalKas);
+                tambahPengeluaranButton.addEventListener('click', () => pengeluaranModal.classList.remove('hidden'));
+                
                 cancelResetButton.addEventListener('click', () => resetModal.classList.add('hidden'));
                 confirmResetButton.addEventListener('click', () => {
                     resetCurrentWeekPayments();
                     resetModal.classList.add('hidden');
                 });
+                
+                pengeluaranForm.addEventListener('submit', handleExpenseSubmit);
+                batalPengeluaranButton.addEventListener('click', () => pengeluaranModal.classList.add('hidden'));
+                closeTotalKasModal.addEventListener('click', () => totalKasModal.classList.add('hidden'));
 
                 render();
             }
-
         });
     </script>
 </body>

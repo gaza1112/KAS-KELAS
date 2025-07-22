@@ -42,8 +42,32 @@
 </head>
 <body class="bg-gray-900 text-gray-200">
 
+    <!-- Login View -->
+    <div id="login-view" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-700">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-blue-400">Login Admin Kas Kelas</h1>
+                <p class="text-gray-400">Silakan masuk untuk melanjutkan</p>
+            </div>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-300 mb-1">Username</label>
+                    <input type="text" id="username" class="w-full px-4 py-2 border bg-gray-700 border-gray-600 text-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 border bg-gray-700 border-gray-600 text-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <p id="login-error" class="text-red-400 text-sm text-center mb-4 h-5"></p>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    Masuk
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- App View -->
-    <div id="app-view">
+    <div id="app-view" class="hidden">
         <div class="container mx-auto max-w-lg p-4 min-h-screen bg-gray-800">
             <header class="text-center py-4 border-b-2 border-gray-700">
                 <h1 class="text-3xl font-bold text-blue-400">KAS KELAS X-L</h1>
@@ -112,6 +136,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const loginView = document.getElementById('login-view');
+            const appView = document.getElementById('app-view');
+            const loginForm = document.getElementById('login-form');
+            const loginError = document.getElementById('login-error');
+
             const STUDENT_LIST = [
                 "Achmad Ilham", "Alvia Eren Istiqomah", "Ananda Ridho Aditama", "Amelia Dewi Maharani",
                 "Angelita Aura Aprilia", "Anisa Nurul Aini", "Arifa Intan Nurlatif", "Aurellia Tungga Dewi",
@@ -143,6 +172,22 @@
 
             let currentDay = 'selasa';
             let allData = {};
+
+            // --- Login Logic ---
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (username === 'gaza74' && password === 'gaza74') {
+                    loginError.textContent = '';
+                    loginView.classList.add('hidden');
+                    appView.classList.remove('hidden');
+                    initializeApp();
+                } else {
+                    loginError.textContent = 'Username atau password salah.';
+                }
+            });
 
             // --- Data Handling Functions ---
             function loadAllData() {
@@ -312,7 +357,6 @@
                 render();
             }
 
-            initializeApp();
         });
     </script>
 </body>

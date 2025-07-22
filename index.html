@@ -461,8 +461,13 @@
             }
 
             function downloadReport() {
-                let reportContent = `Laporan Kas Kelas X-L Keseluruhan\n========================================\nLaporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n\n`;
+                const selectedMonthText = monthSelect.options[monthSelect.selectedIndex].text;
+                const selectedWeekText = weekSelect.options[weekSelect.selectedIndex].text;
+                const currentPeriodData = getDataForCurrentPeriod();
+                
+                let reportContent = `Laporan Kas Kelas X-L\n========================================\nLaporan dibuat pada: ${new Date().toLocaleString('id-ID')}\n\n`;
 
+                // --- Rangkuman Keuangan Keseluruhan ---
                 let totalPemasukan = 0;
                 for (const periodKey in allData.kasData) {
                     const periodData = allData.kasData[periodKey];
@@ -472,19 +477,46 @@
                         if (student.jumat) totalPemasukan += KAS_AMOUNT;
                     }
                 }
-                
-                let totalDonasi = 0;
-                allData.donations.forEach(d => totalDonasi += d.jumlah);
-                let totalPengeluaran = 0;
-                allData.expenses.forEach(e => totalPengeluaran += e.jumlah);
+                let totalDonasi = allData.donations.reduce((sum, d) => sum + d.jumlah, 0);
+                let totalPengeluaran = allData.expenses.reduce((sum, e) => sum + e.jumlah, 0);
                 const saldoAkhir = (totalPemasukan + totalDonasi) - totalPengeluaran;
 
-                reportContent += `--- RANGKUMAN KEUANGAN ---\n`;
+                reportContent += `--- RANGKUMAN KEUANGAN KESELURUHAN ---\n`;
                 reportContent += `Total Pemasukan Kas  : Rp ${totalPemasukan.toLocaleString('id-ID')}\n`;
                 reportContent += `Total Pemasukan Donasi: Rp ${totalDonasi.toLocaleString('id-ID')}\n`;
                 reportContent += `Total Pengeluaran    : Rp ${totalPengeluaran.toLocaleString('id-ID')}\n`;
                 reportContent += `Saldo Akhir          : Rp ${saldoAkhir.toLocaleString('id-ID')}\n\n`;
-                
+
+                // --- Rincian Pembayaran Minggu Ini ---
+                reportContent += `--- RINCIAN PEMBAYARAN UNTUK ${selectedMonthText.toUpperCase()} - ${selectedWeekText.toUpperCase()} ---\n`;
+                const sudahBayar = [];
+                const belumBayar = [];
+                Object.values(currentPeriodData).forEach(student => {
+                    if (student.selasa && student.jumat) {
+                        sudahBayar.push(student.name);
+                    } else {
+                        let tunggakan = [];
+                        if (!student.selasa) tunggakan.push("Selasa");
+                        if (!student.jumat) tunggakan.push("Jumat");
+                        belumBayar.push(`${student.name} (Belum: ${tunggakan.join(', ')})`);
+                    }
+                });
+
+                reportContent += `Sudah Membayar (Lunas Minggu Ini):\n`;
+                if (sudahBayar.length > 0) {
+                    sudahBayar.forEach((nama, i) => reportContent += `${i + 1}. ${nama}\n`);
+                } else {
+                    reportContent += `Tidak ada.\n`;
+                }
+                reportContent += `\nBelum Membayar (Tunggakan Minggu Ini):\n`;
+                 if (belumBayar.length > 0) {
+                    belumBayar.forEach((nama, i) => reportContent += `${i + 1}. ${nama}\n`);
+                } else {
+                    reportContent += `Tidak ada.\n`;
+                }
+                reportContent += `\n`;
+
+                // --- Rincian Donasi dan Pengeluaran ---
                 reportContent += `--- RINCIAN DONASI ---\n`;
                 if (allData.donations.length > 0) {
                     allData.donations.forEach(d => {

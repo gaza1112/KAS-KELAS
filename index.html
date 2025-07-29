@@ -118,6 +118,10 @@
                         <button id="btn-selasa" class="btn-day w-full py-2 px-4 rounded-lg border border-slate-600 bg-slate-700 hover:bg-slate-600">Selasa</button>
                         <button id="btn-jumat" class="btn-day w-full py-2 px-4 rounded-lg border border-slate-600 bg-slate-700 hover:bg-slate-600">Jumat</button>
                     </div>
+                    <button id="mark-all-paid-button" class="w-full mt-2 py-2 px-4 rounded-lg border border-green-600 bg-green-600/20 text-green-300 hover:bg-green-600/40 transition-colors flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                        Tandai Semua Lunas
+                    </button>
                 </div>
             </div>
 
@@ -155,6 +159,17 @@
     </div>
     
     <!-- Modals -->
+    <div id="confirm-all-paid-modal" class="fixed inset-0 bg-black bg-opacity-70 modal-backdrop flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-bold text-center">Konfirmasi</h3>
+            <p class="text-center text-slate-300 my-4">Anda yakin ingin menandai semua siswa sebagai LUNAS untuk minggu ini (Selasa & Jumat)?</p>
+            <div class="flex justify-end gap-3 mt-6">
+                <button id="cancel-all-paid" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500">Batal</button>
+                <button id="confirm-all-paid" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Ya, Tandai Semua</button>
+            </div>
+        </div>
+    </div>
+
     <div id="pengeluaran-modal" class="fixed inset-0 bg-black bg-opacity-70 modal-backdrop flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-6 w-full max-w-sm">
             <h3 class="text-lg font-bold text-center">Catat Pengeluaran Baru</h3>
@@ -265,11 +280,13 @@
             const tambahDonasiButton = document.getElementById('tambah-donasi-button');
             const backupButton = document.getElementById('backup-button');
             const restoreInput = document.getElementById('restore-input');
+            const markAllPaidButton = document.getElementById('mark-all-paid-button');
 
             // Modals
             const pengeluaranModal = document.getElementById('pengeluaran-modal');
             const donasiModal = document.getElementById('donasi-modal');
             const totalKasModal = document.getElementById('total-kas-modal');
+            const confirmAllPaidModal = document.getElementById('confirm-all-paid-modal');
 
             // Forms & Modal Controls
             const pengeluaranForm = document.getElementById('pengeluaran-form');
@@ -277,6 +294,8 @@
             const batalPengeluaranButton = document.getElementById('batal-pengeluaran');
             const batalDonasiButton = document.getElementById('batal-donasi');
             const closeTotalKasModal = document.getElementById('close-total-kas-modal');
+            const cancelAllPaidButton = document.getElementById('cancel-all-paid');
+            const confirmAllPaidButton = document.getElementById('confirm-all-paid');
 
             // Display elements in Total Modal
             const displayPemasukan = document.getElementById('display-pemasukan');
@@ -454,6 +473,17 @@
                 studentData[studentId][currentDay] = !studentData[studentId][currentDay];
                 saveData();
                 render();
+            }
+
+            function markAllAsPaid() {
+                const studentData = getDataForCurrentPeriod();
+                Object.keys(studentData).forEach(studentId => {
+                    studentData[studentId].selasa = true;
+                    studentData[studentId].jumat = true;
+                });
+                saveData();
+                render();
+                showToast("Semua siswa ditandai lunas untuk minggu ini.");
             }
 
             function handleExpenseSubmit(e) {
@@ -652,12 +682,18 @@
                 tambahDonasiButton.addEventListener('click', () => donasiModal.classList.remove('hidden'));
                 backupButton.addEventListener('click', handleBackup);
                 restoreInput.addEventListener('change', handleRestore);
+                markAllPaidButton.addEventListener('click', () => confirmAllPaidModal.classList.remove('hidden'));
                 
                 pengeluaranForm.addEventListener('submit', handleExpenseSubmit);
                 batalPengeluaranButton.addEventListener('click', () => pengeluaranModal.classList.add('hidden'));
                 donasiForm.addEventListener('submit', handleDonationSubmit);
                 batalDonasiButton.addEventListener('click', () => donasiModal.classList.add('hidden'));
                 closeTotalKasModal.addEventListener('click', () => totalKasModal.classList.add('hidden'));
+                cancelAllPaidButton.addEventListener('click', () => confirmAllPaidModal.classList.add('hidden'));
+                confirmAllPaidButton.addEventListener('click', () => {
+                    markAllAsPaid();
+                    confirmAllPaidModal.classList.add('hidden');
+                });
 
                 render();
             }

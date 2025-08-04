@@ -339,7 +339,12 @@
             }
             
             function saveLastView() {
-                const currentView = { month: monthSelect.value, week: weekSelect.value };
+                const currentView = { 
+                    month: monthSelect.value, 
+                    week: weekSelect.value,
+                    day: currentDay,
+                    billingMode: isBillingMode
+                };
                 localStorage.setItem(LAST_VIEW_KEY, JSON.stringify(currentView));
             }
 
@@ -679,6 +684,9 @@
                 if (lastView && monthSelect.querySelector(`option[value="${lastView.month}"]`)) {
                     monthSelect.value = lastView.month;
                     weekSelect.value = lastView.week;
+                    currentDay = lastView.day || 'selasa';
+                    isBillingMode = lastView.billingMode || false;
+                    billingToggle.checked = isBillingMode;
                 } else {
                     monthSelect.value = '2025-7';
                     weekSelect.value = '3';

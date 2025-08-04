@@ -261,6 +261,7 @@
             ];
             const KAS_AMOUNT = 2000;
             const STORAGE_KEY = 'kasKelasXLData';
+            const LAST_VIEW_KEY = 'kasKelasLastView';
 
             // DOM Elements
             const studentListContainer = document.getElementById('student-list');
@@ -335,6 +336,11 @@
 
             function saveData() {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+            }
+            
+            function saveLastView() {
+                const currentView = { month: monthSelect.value, week: weekSelect.value };
+                localStorage.setItem(LAST_VIEW_KEY, JSON.stringify(currentView));
             }
 
             function getDataForCurrentPeriod() {
@@ -453,6 +459,7 @@
                 });
                 updateSummary();
                 updateActiveDayButton();
+                saveLastView();
             }
 
             function updateSummary() {
@@ -667,8 +674,15 @@
             function startApp() {
                 allData = loadAllData();
                 populateMonthSelector();
-                monthSelect.value = '2025-7';
-                weekSelect.value = '3';
+
+                const lastView = JSON.parse(localStorage.getItem(LAST_VIEW_KEY));
+                if (lastView && monthSelect.querySelector(`option[value="${lastView.month}"]`)) {
+                    monthSelect.value = lastView.month;
+                    weekSelect.value = lastView.week;
+                } else {
+                    monthSelect.value = '2025-7';
+                    weekSelect.value = '3';
+                }
 
                 // Event Listeners
                 monthSelect.addEventListener('change', render);

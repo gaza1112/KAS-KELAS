@@ -192,15 +192,15 @@
 
     <div id="donasi-modal" class="fixed inset-0 bg-black bg-opacity-70 modal-backdrop flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-6 w-full max-w-sm">
-            <h3 class="text-lg font-bold text-center">Catat Donasi Baru</h3>
+            <h3 class="text-lg font-bold text-center">Tambah Donasi</h3>
             <form id="donasi-form">
                 <div class="mt-4">
-                    <label for="donasi-jumlah" class="block text-sm font-medium text-slate-300 mb-1">Jumlah (Rp)</label>
+                    <label for="donasi-jumlah" class="block text-sm font-medium text-slate-300 mb-1">Jumlah Tambahan (Rp)</label>
                     <input type="number" id="donasi-jumlah" placeholder="Contoh: 50000" class="w-full px-4 py-2 border bg-slate-700 border-slate-600 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
                     <button type="button" id="batal-donasi" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500">Batal</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Tambah</button>
                 </div>
             </form>
         </div>
@@ -227,15 +227,9 @@
             <p class="text-slate-300 text-xl">Saldo Akhir:</p>
             <p class="text-4xl sm:text-5xl font-bold text-blue-400 my-2" id="display-saldo-akhir">Rp 0</p>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 text-left">
-                <div>
-                    <h4 class="font-semibold mb-2">Rincian Donasi:</h4>
-                    <div id="rincian-donasi-list" class="max-h-32 overflow-y-auto space-y-2 pr-2"></div>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-2">Rincian Pengeluaran:</h4>
-                    <div id="rincian-pengeluaran-list" class="max-h-32 overflow-y-auto space-y-2 pr-2"></div>
-                </div>
+            <div class="mt-6 text-left">
+                <h4 class="font-semibold mb-2">Rincian Pengeluaran:</h4>
+                <div id="rincian-pengeluaran-list" class="max-h-40 overflow-y-auto space-y-2 pr-2"></div>
             </div>
 
             <div class="flex justify-center mt-6">
@@ -304,11 +298,10 @@
             const displayDonasi = document.getElementById('display-donasi');
             const displayPengeluaran = document.getElementById('display-pengeluaran');
             const displaySaldoAkhir = document.getElementById('display-saldo-akhir');
-            const rincianDonasiList = document.getElementById('rincian-donasi-list');
             const rincianPengeluaranList = document.getElementById('rincian-pengeluaran-list');
             
             let currentDay = 'selasa';
-            let allData = { kasData: {}, expenses: [], donations: [] };
+            let allData = { kasData: {}, expenses: [], totalDonation: 0 };
             let isBillingMode = false;
 
             // --- Login Logic ---
@@ -327,10 +320,10 @@
             // --- Data Handling Functions ---
             function loadAllData() {
                 const dataString = localStorage.getItem(STORAGE_KEY);
-                const loadedData = dataString ? JSON.parse(dataString) : { kasData: {}, expenses: [], donations: [] };
+                const loadedData = dataString ? JSON.parse(dataString) : { kasData: {}, expenses: [], totalDonation: 0 };
                 if (!loadedData.kasData) loadedData.kasData = {};
                 if (!loadedData.expenses) loadedData.expenses = [];
-                if (!loadedData.donations) loadedData.donations = [];
+                if (!loadedData.totalDonation) loadedData.totalDonation = 0;
                 return loadedData;
             }
 
@@ -515,10 +508,11 @@
                 e.preventDefault();
                 const jumlah = parseInt(document.getElementById('donasi-jumlah').value);
                 if (jumlah > 0) {
-                    allData.donations.push({ keterangan: "Donasi", jumlah, tanggal: new Date().toISOString() });
+                    allData.totalDonation += jumlah;
                     saveData();
                     donasiForm.reset();
                     donasiModal.classList.add('hidden');
+                    showToast(`Donasi Rp ${jumlah.toLocaleString('id-ID')} berhasil ditambahkan.`);
                 }
             }
             
@@ -534,12 +528,10 @@
                     if (student.selasa) totalPemasukan += KAS_AMOUNT;
                     if (student.jumat) totalPemasukan += KAS_AMOUNT;
                 }));
-                let totalDonasi = allData.donations.reduce((sum, d) => sum + d.jumlah, 0);
+                let totalDonasi = allData.totalDonation;
                 let totalPengeluaran = allData.expenses.reduce((sum, e) => sum + e.jumlah, 0);
                 const saldoAkhir = (totalPemasukan + totalDonasi) - totalPengeluaran;
 
-                rincianDonasiList.innerHTML = allData.donations.length === 0 ? '<p class="text-gray-500">Belum ada donasi.</p>' : '';
-                allData.donations.forEach(donasi => createTransactionItem(rincianDonasiList, donasi, 'donations'));
                 rincianPengeluaranList.innerHTML = allData.expenses.length === 0 ? '<p class="text-gray-500">Belum ada pengeluaran.</p>' : '';
                 allData.expenses.forEach(expense => createTransactionItem(rincianPengeluaranList, expense, 'expenses'));
 
@@ -576,7 +568,7 @@
                 Object.values(allData.kasData).forEach(p => Object.values(p).forEach(s => {
                     if(s.selasa) totalPemasukan += KAS_AMOUNT; if(s.jumat) totalPemasukan += KAS_AMOUNT;
                 }));
-                let totalDonasi = allData.donations.reduce((sum, d) => sum + d.jumlah, 0);
+                let totalDonasi = allData.totalDonation;
                 let totalPengeluaran = allData.expenses.reduce((sum, e) => sum + e.jumlah, 0);
                 const saldoAkhir = (totalPemasukan + totalDonasi) - totalPengeluaran;
 
@@ -604,10 +596,6 @@
                 reportContent += sudahBayar.length > 0 ? sudahBayar.map((nama, i) => `${i + 1}. ${nama}`).join('\n') : 'Tidak ada.\n';
                 reportContent += `\nBelum Membayar (Tunggakan Minggu Ini):\n`;
                 reportContent += belumBayar.length > 0 ? belumBayar.map((nama, i) => `${i + 1}. ${nama}`).join('\n') : 'Tidak ada.\n';
-                reportContent += `\n`;
-
-                reportContent += `--- RINCIAN DONASI ---\n`;
-                reportContent += allData.donations.length > 0 ? allData.donations.map(d => `- ${new Date(d.tanggal).toLocaleDateString('id-ID')}: ${d.keterangan.padEnd(30, ' ')} (Rp ${d.jumlah.toLocaleString('id-ID')})`).join('\n') : 'Tidak ada donasi.\n';
                 reportContent += `\n`;
 
                 reportContent += `--- RINCIAN PENGELUARAN ---\n`;
@@ -646,7 +634,7 @@
                 reader.onload = function(e) {
                     try {
                         const restoredData = JSON.parse(e.target.result);
-                        if (restoredData.kasData && restoredData.expenses && restoredData.donations) {
+                        if (restoredData.kasData && restoredData.expenses && restoredData.hasOwnProperty('totalDonation')) {
                             if (confirm("Anda yakin ingin menimpa semua data saat ini dengan data dari file backup? Tindakan ini tidak dapat dibatalkan.")) {
                                 allData = restoredData;
                                 saveData();
